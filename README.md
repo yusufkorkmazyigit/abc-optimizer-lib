@@ -27,19 +27,19 @@ Bu kütüphaneyi doğrudan GitHub üzerinden `pip` ile kurabilirsiniz:
 
 ```bash
 pip install git+[https://github.com/yusufkorkmazyigit/abc-optimizer-lib.git](https://github.com/yusufkorkmazyigit/abc-optimizer-lib.git)
+```
 Geliştirme yapmak (kodu değiştirmek) isterseniz:
 
-Bash
-
+```
 git clone [https://github.com/yusufkorkmazyigit/abc-optimizer-lib.git](https://github.com/yusufkorkmazyigit/abc-optimizer-lib.git)
 cd abc-optimizer-lib
 pip install -e .
+```
 📖 Kullanım Örnekleri
 1. LightGBM Hiperparametre Optimizasyonu
 Makine öğrenmesi modellerinizde en iyi parametreleri bulmak için ABCSearchCV sınıfını kullanın:
 
-Python
-
+```
 import lightgbm as lgb
 from sklearn.datasets import load_breast_cancer
 from abc_algorithm import ABCSearchCV
@@ -70,11 +70,11 @@ abc.fit(X, y)
 
 print("En iyi skor:", abc.best_score_)
 print("En iyi parametreler:", abc.best_params_)
+```
 2. Matematiksel Fonksiyon Minimizasyonu
 Sadece bir denklemi çözmek isterseniz CanonicalABCSolver kullanın:
 
-Python
-
+```
 from abc_algorithm import CanonicalABCSolver
 
 # Hedef: Sphere Fonksiyonu (x^2 toplamı 0 olmalı)
@@ -91,6 +91,7 @@ solver = CanonicalABCSolver(
 
 best_params, best_cost, _ = solver.solve()
 print(f"Sonuç: {best_params}, Maliyet: {best_cost:.5f}")
+```
 🧠 Algoritma Mantığı
 ABC algoritması, doğadaki arıların yiyecek arama davranışlarını taklit eder ve üç fazdan oluşur:
 
