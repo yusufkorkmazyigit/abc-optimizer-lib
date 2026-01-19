@@ -35,9 +35,9 @@ git clone [https://github.com/yusufkorkmazyigit/abc-optimizer-lib.git](https://g
 cd abc-optimizer-lib
 pip install -e .
 ```
-📖 Kullanım Örnekleri
+## 📖 Kullanım Örnekleri
 1. LightGBM Hiperparametre Optimizasyonu
-Makine öğrenmesi modellerinizde en iyi parametreleri bulmak için ABCSearchCV sınıfını kullanın:
+Makine öğrenmesi modellerinizde en iyi parametreleri bulmak için `ABCSearchCV` sınıfını kullanın:
 
 ```
 import lightgbm as lgb
@@ -72,7 +72,7 @@ print("En iyi skor:", abc.best_score_)
 print("En iyi parametreler:", abc.best_params_)
 ```
 2. Matematiksel Fonksiyon Minimizasyonu
-Sadece bir denklemi çözmek isterseniz CanonicalABCSolver kullanın:
+Sadece bir denklemi çözmek isterseniz `CanonicalABCSolver` kullanın:
 
 ```
 from abc_algorithm import CanonicalABCSolver
@@ -92,17 +92,17 @@ solver = CanonicalABCSolver(
 best_params, best_cost, _ = solver.solve()
 print(f"Sonuç: {best_params}, Maliyet: {best_cost:.5f}")
 ```
-🧠 Algoritma Mantığı
+## 🧠 Algoritma Mantığı
 ABC algoritması, doğadaki arıların yiyecek arama davranışlarını taklit eder ve üç fazdan oluşur:
 
-İşçi Arılar (Employed Bees): Mevcut bir kaynağı (çözümü) komşuluk araştırması ile geliştirmeye çalışır.
+**İşçi Arılar (Employed Bees):** Mevcut bir kaynağı (çözümü) komşuluk araştırması ile geliştirmeye çalışır.
 
-Gözcü Arılar (Onlooker Bees): İşçi arıların getirdiği nektar bilgisine (fitness) göre Rulet Tekerleği yöntemiyle seçim yapar. İyi kaynaklar daha çok araştırılır.
+**Gözcü Arılar (Onlooker Bees):** İşçi arıların getirdiği nektar bilgisine (fitness) göre Rulet Tekerleği yöntemiyle seçim yapar. İyi kaynaklar daha çok araştırılır.
 
-Kaşif Arılar (Scout Bees): Belirli bir süre geliştirilemeyen (limit) kaynaklar terk edilir ve rastgele yeni bir çözüm aranır.
+**Kaşif Arılar (Scout Bees):** Belirli bir süre geliştirilemeyen (`limit`) kaynaklar terk edilir ve rastgele yeni bir çözüm aranır.
 
-📚 Referans
+## 📚 Referans
 Karaboga, D. (2005). An idea based on honey bee swarm for numerical optimization. Technical report-tr06, Erciyes University, engineering faculty, computer engineering department.
 
-📝 Lisans
+## 📝 Lisans
 Bu proje MIT Lisansı ile sunulmuştur.
