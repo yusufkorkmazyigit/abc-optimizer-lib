@@ -101,6 +101,26 @@ ABC algoritması, doğadaki arıların yiyecek arama davranışlarını taklit e
 
 **Kaşif Arılar (Scout Bees):** Belirli bir süre geliştirilemeyen (`limit`) kaynaklar terk edilir ve rastgele yeni bir çözüm aranır.
 
+---
+
+## 🔬 Gerçek Hayat Uygulaması: Federated Learning Optimizasyonu
+
+Bu kütüphane kullanılarak, **MedMNIST** veriseti üzerinde **Non-IID (Dengesiz) Veri** dağılımına sahip bir **Federated Learning** mimarisi optimize edilmiştir.
+
+**Senaryo:**
+* **Veri Seti:** PathMNIST (Bağırsak dokusu sınıflandırma).
+* **Problem:** 5 farklı hastaneye (istemciye) dengesiz dağıtılmış veri. Standart `FedAvg` algoritması bu durumda zorlanmaktadır.
+* **Çözüm:** `CanonicalABCSolver` kullanılarak Learning Rate ve Momentum parametreleri optimize edilmiştir.
+
+**Sonuçlar:**
+ABC ile optimize edilmiş model, standart parametrelere göre daha hızlı yakınsamış ve **%7 daha yüksek doğruluk** elde etmiştir.
+
+![ABC vs Standard FedAvg](./examples/abc_fedavg_final_result.png)
+
+🔗 **[Tüm kodu ve detaylı analizi incelemek için tıklayın](./examples/Federated_Learning_MedMNIST_Optimization.ipynb)**
+
+---
+
 ## 📚 Referans
 Karaboga, D. (2005). An idea based on honey bee swarm for numerical optimization. Technical report-tr06, Erciyes University, engineering faculty, computer engineering department.
 
