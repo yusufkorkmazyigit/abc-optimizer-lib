@@ -157,9 +157,16 @@ Fitness is derived from cost as `1 / (1 + f)` for `f ≥ 0` and `1 + |f|` otherw
 
 ## 🔬 Case Study: Federated Learning on MedMNIST
 
-The library was used to tune a **federated learning** setup trained on **PathMNIST** (colon pathology images), with data split across **5 simulated hospitals** in a **non-IID** (imbalanced) way, a setting where standard **FedAvg** struggles.
+The library was used to tune a **federated learning** setup on **PathMNIST** (colon pathology images, 9 classes). The data is split across **5 simulated hospitals** with a **Dirichlet distribution (α = 0.5)**, a non-IID setting where FedAvg with default hyperparameters struggles.
 
-`CanonicalABCSolver` optimized the clients' **learning rate** and **momentum**. Compared with default hyperparameters, the ABC-tuned model **converged faster and reached 7% higher accuracy**.
+`CanonicalABCSolver` searched the clients' **learning rate** (0.001–0.1) and **SGD momentum** (0.0–0.9), scoring each candidate with a short 3-round FL simulation as a proxy task. The best configuration was then trained for 15 rounds:
+
+| Method | LR | Momentum | Test accuracy (round 15) |
+|---|---|---|---|
+| Standard FedAvg | 0.010 | 0.50 | 78.05% |
+| **ABC-tuned FedAvg** | **0.069** | **0.57** | **85.28%** (+7.2 pts) |
+
+For reference, centralized training with the default hyperparameters reached 80.29%.
 
 ![ABC vs. standard FedAvg](examples/abc_fedavg_final_result.png)
 
