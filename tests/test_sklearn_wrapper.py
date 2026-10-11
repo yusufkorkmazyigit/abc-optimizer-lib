@@ -9,7 +9,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-from abc_algorithm import ABCSearchCV
+from abcopt import ABCSearchCV
 
 X, y = load_iris(return_X_y=True)
 

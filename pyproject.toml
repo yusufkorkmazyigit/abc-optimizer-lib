@@ -1,13 +1,14 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "abc-optimizer-lib"
+name = "abcopt"
 version = "0.2.0"
 description = "Canonical Artificial Bee Colony (ABC) optimization with a scikit-learn compatible hyperparameter search"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Yusuf Korkmazyiğit", email = "yusuf.korkmazyigit@gmail.com" }]
 requires-python = ">=3.9"
 dependencies = ["numpy>=1.21", "scikit-learn>=1.0"]
@@ -15,7 +16,6 @@ keywords = ["artificial bee colony", "swarm intelligence", "metaheuristics",
             "hyperparameter optimization", "scikit-learn"]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
@@ -29,7 +29,7 @@ Homepage = "https://github.com/yusufkorkmazyigit/abc-optimizer-lib"
 Issues = "https://github.com/yusufkorkmazyigit/abc-optimizer-lib/issues"
 
 [tool.setuptools]
-packages = ["abc_algorithm"]
+packages = ["abcopt"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

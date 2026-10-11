@@ -1,14 +1,15 @@
-# 🐝 ABC Optimizer Lib
+# 🐝 abcopt
 
 **Canonical Artificial Bee Colony (ABC) optimization in pure Python, with a scikit-learn compatible hyperparameter search.**
 
-[![tests](https://github.com/yusufkorkmazyigit/abc-optimizer-lib/actions/workflows/tests.yml/badge.svg)](https://github.com/yusufkorkmazyigit/abc-optimizer-lib/actions/workflows/tests.yml)
+[![PyPI](https://img.shields.io/pypi/v/abcopt)](https://pypi.org/project/abcopt/)
+[![tests](https://github.com/yusufkorkmazyigit/abc-optimizer-lib/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/yusufkorkmazyigit/abc-optimizer-lib/actions/workflows/tests.yml)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![scikit-learn](https://img.shields.io/badge/sklearn-compatible-orange)
 ![Dependencies](https://img.shields.io/badge/deps-numpy%20%7C%20scikit--learn-lightgrey)
 
-ABC Optimizer Lib is a faithful implementation of the **Artificial Bee Colony** algorithm proposed by **Derviş Karaboğa (2005)** at Erciyes University. It is useful for two things:
+**abcopt** is a faithful implementation of the **Artificial Bee Colony** algorithm proposed by **Derviş Karaboğa (2005)** at Erciyes University. It is useful for two things:
 
 1. **Black-box optimization:** minimize any objective function within box constraints, with no gradients required.
 2. **Hyperparameter tuning:** a drop-in alternative to `GridSearchCV` / `RandomizedSearchCV` for any scikit-learn compatible estimator (scikit-learn, LightGBM, XGBoost, …).
@@ -32,7 +33,11 @@ ABC Optimizer Lib is a faithful implementation of the **Artificial Bee Colony** 
 ## 📦 Installation
 
 ```bash
-pip install git+https://github.com/yusufkorkmazyigit/abc-optimizer-lib.git
+pip install abcopt
+```
+
+```python
+from abcopt import ABCSearchCV, CanonicalABCSolver
 ```
 
 For development:
@@ -40,7 +45,7 @@ For development:
 ```bash
 git clone https://github.com/yusufkorkmazyigit/abc-optimizer-lib.git
 cd abc-optimizer-lib
-pip install -e .
+pip install -e ".[test]"
 ```
 
 ---
@@ -52,7 +57,7 @@ pip install -e .
 ```python
 import lightgbm as lgb
 from sklearn.datasets import load_breast_cancer
-from abc_algorithm import ABCSearchCV
+from abcopt import ABCSearchCV
 
 X, y = load_breast_cancer(return_X_y=True)
 
@@ -83,7 +88,7 @@ y_pred = search.predict(X)   # uses best_estimator_, refit on the full data
 
 ```python
 import numpy as np
-from abc_algorithm import CanonicalABCSolver
+from abcopt import CanonicalABCSolver
 
 def sphere(x):
     return np.sum(x ** 2)    # global minimum: 0 at x = 0
@@ -191,9 +196,9 @@ The library was used to tune a **federated learning** setup on **PathMNIST** (co
 
 For reference, centralized training with the default hyperparameters reached 80.29%.
 
-![ABC vs. standard FedAvg](examples/abc_fedavg_final_result.png)
+![ABC vs. standard FedAvg](https://raw.githubusercontent.com/yusufkorkmazyigit/abc-optimizer-lib/main/examples/abc_fedavg_final_result.png)
 
-📓 [Full notebook and analysis](examples/Federated_Learning_MedMNIST_Optimization.ipynb) · Related repo: [fedLearningwithABC](https://github.com/yusufkorkmazyigit/fedLearningwithABC)
+📓 [Full notebook and analysis](https://github.com/yusufkorkmazyigit/abc-optimizer-lib/blob/main/examples/Federated_Learning_MedMNIST_Optimization.ipynb) · Related repo: [fedLearningwithABC](https://github.com/yusufkorkmazyigit/fedLearningwithABC)
 
 ---
 
@@ -205,7 +210,7 @@ For reference, centralized training with the default hyperparameters reached 80.
 - [x] Parallel cross-validation (`n_jobs`)
 - [ ] Benchmarks against `GridSearchCV`, `RandomizedSearchCV` and Optuna
 - [ ] Parallel evaluation of candidates within a colony
-- [ ] PyPI release
+- [x] PyPI release
 
 Contributions and issues are welcome.
 
@@ -218,7 +223,7 @@ pip install -e ".[test]"
 pytest
 ```
 
-See [CHANGELOG.md](CHANGELOG.md) for release notes.
+See [CHANGELOG.md](https://github.com/yusufkorkmazyigit/abc-optimizer-lib/blob/main/CHANGELOG.md) for release notes.
 
 ---
 
@@ -230,7 +235,7 @@ If you use this library in your research, please cite the original paper above a
 
 ## 📝 License
 
-Released under the [MIT License](LICENSE).
+Released under the [MIT License](https://github.com/yusufkorkmazyigit/abc-optimizer-lib/blob/main/LICENSE).
 
 ---
 

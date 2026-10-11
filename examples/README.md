@@ -71,7 +71,7 @@ The ABC-optimized model (Blue line) demonstrated faster convergence and higher s
 
 2.  **Install the ABC Optimizer Library:**
     ```bash
-    pip install git+[https://github.com/yusufkorkmazyigit/abc-optimizer-lib.git](https://github.com/yusufkorkmazyigit/abc-optimizer-lib.git)
+    pip install abcopt
     ```
 
 3.  **Run the Notebook:**

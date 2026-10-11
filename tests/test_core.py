@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from abc_algorithm import CanonicalABCSolver
+from abcopt import CanonicalABCSolver
 
 
 def sphere(x):
