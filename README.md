@@ -202,13 +202,37 @@ For reference, centralized training with the default hyperparameters reached 80.
 
 ---
 
+## 📊 Benchmark
+
+abcopt was compared with **Random Search** and **Optuna TPE** under identical evaluation budgets ([full notebook](https://github.com/yusufkorkmazyigit/abc-optimizer-lib/blob/main/examples/benchmark/benchmark.ipynb)).
+
+**Black-box functions (D = 10, 10 seeds), best value found (lower is better):**
+
+| Function | ABC @ 1k | TPE @ 1k | ABC @ 10k | TPE @ 2k | Random @ 10k |
+|---|---|---|---|---|---|
+| Sphere | 1.07 | **0.27** | **5e-11** | 0.22 | 12.3 |
+| Rosenbrock | 374 | **88.5** | **0.99** | 114 | 1.1e4 |
+| Rastrigin | **26.3** | 59.7 | **0.10** | 47.3 | 71.2 |
+| Ackley | 12.6 | **5.58** | **0.0004** | 5.8 | 16.7 |
+
+![Long-budget convergence](https://raw.githubusercontent.com/yusufkorkmazyigit/abc-optimizer-lib/main/examples/benchmark/benchmark_functions_long.png)
+
+**Takeaways**
+
+- With a **short budget**, TPE is usually ahead; ABC beats Random Search everywhere and wins on the highly multimodal Rastrigin.
+- With a **larger budget**, ABC converges to near the global optimum on all four functions while TPE stalls.
+- ABC's own overhead is tiny: about **0.04 s vs 28 s** for TPE over 2,000 evaluations.
+- For **hyperparameter tuning with only 50 candidates**, the three methods are within noise on test accuracy, and TPE finds the best CV score. For very small budgets of expensive evaluations, TPE is the better choice.
+
+---
+
 ## 🗺️ Roadmap
 
 - [x] Categorical and log-scaled hyperparameters
 - [x] `random_state` for reproducibility
 - [x] Unit tests and continuous integration
 - [x] Parallel cross-validation (`n_jobs`)
-- [ ] Benchmarks against `GridSearchCV`, `RandomizedSearchCV` and Optuna
+- [x] Benchmark against Random Search and Optuna TPE
 - [ ] Parallel evaluation of candidates within a colony
 - [x] PyPI release
 

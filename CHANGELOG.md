@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Benchmark notebook comparing ABC with Random Search and Optuna TPE (`examples/benchmark/`).
+
 ## 0.2.0
 
 ### Added
