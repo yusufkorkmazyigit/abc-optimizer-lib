@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.2
+
+### Added
+- `ABCSearchCV(cache=True)`: a configuration that ABC proposes again (common with integer and categorical parameters) reuses its stored score instead of being cross-validated again. The search and its result are unchanged; in our tests 46–75% of candidates on discrete spaces were repeats, and tuning ran about twice as fast.
+- scikit-learn compatibility: `cv_results_` in `GridSearchCV` format, `best_index_`, `n_splits_`, `refit_time_`, `n_unique_evals_`, `classes_`, `predict_log_proba`, `decision_function`, `transform`.
+- `fit(X, y, groups=None, **fit_params)` forwards `fit_params` (for example `sample_weight`) to the estimator.
+- `results_` entries record whether a candidate was served from the cache.
+- `CITATION.cff`, Python version classifiers.
+
+### Changed
+- `ABCSearchCV.score` now uses the `scoring` parameter, as `GridSearchCV.score` does (previously the estimator's default `score`).
+- README restructured: animation, quick start, algorithm overview, benchmark, API reference, notes and limitations, citation.
+
 ## 0.2.1
 
 ### Changed

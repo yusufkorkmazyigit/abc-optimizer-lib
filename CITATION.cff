@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below, together with the original ABC algorithm."
+title: "abcopt: Canonical Artificial Bee Colony optimization for Python"
+type: software
+authors:
+  - family-names: "Korkmazyiğit"
+    given-names: "Yusuf"
+    affiliation: "Erciyes University"
+version: "0.2.2"
+date-released: "2026-10-13"
+license: MIT
+repository-code: "https://github.com/yusufkorkmazyigit/abc-optimizer-lib"
+url: "https://pypi.org/project/abcopt/"
+keywords:
+  - artificial bee colony
+  - swarm intelligence
+  - metaheuristics
+  - hyperparameter optimization
+  - scikit-learn
+references:
+  - type: report
+    title: "An Idea Based on Honey Bee Swarm for Numerical Optimization"
+    authors:
+      - family-names: "Karaboğa"
+        given-names: "Derviş"
+    institution:
+      name: "Erciyes University, Engineering Faculty, Computer Engineering Department"
+    number: "TR06"
+    year: 2005

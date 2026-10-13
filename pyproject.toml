@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "abcopt"
-version = "0.2.1"
+version = "0.2.2"
 description = "Canonical Artificial Bee Colony (ABC) optimization with a scikit-learn compatible hyperparameter search"
 readme = "README.md"
 license = "MIT"
@@ -16,13 +16,17 @@ keywords = ["artificial bee colony", "swarm intelligence", "metaheuristics",
             "hyperparameter optimization", "scikit-learn"]
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Operating System :: OS Independent",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=7"]
+test = ["pytest>=7", "pandas"]
 
 [project.urls]
 Homepage = "https://github.com/yusufkorkmazyigit/abc-optimizer-lib"
