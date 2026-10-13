@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="330" viewBox="0 0 880 330" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+  </defs>
+  <rect width="880" height="330" rx="14" fill="#ffffff"/>
+
+  <!-- Init -->
+  <rect x="24" y="110" width="150" height="86" rx="10" fill="#f3f4f6" stroke="#9ca3af"/>
+  <text x="99" y="140" text-anchor="middle" font-size="15" font-weight="700" fill="#374151">Initialization</text>
+  <text x="99" y="162" text-anchor="middle" font-size="12" fill="#4b5563">SN random food</text>
+  <text x="99" y="178" text-anchor="middle" font-size="12" fill="#4b5563">sources in bounds</text>
+  <line x1="174" y1="153" x2="214" y2="153" stroke="#555" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- Employed -->
+  <rect x="218" y="96" width="186" height="114" rx="10" fill="#fdf3e1" stroke="#E8A33D" stroke-width="2"/>
+  <text x="311" y="124" text-anchor="middle" font-size="15" font-weight="700" fill="#b26b00">1 · Employed bees</text>
+  <text x="311" y="146" text-anchor="middle" font-size="12" fill="#4b5563">one bee per source</text>
+  <text x="311" y="166" text-anchor="middle" font-size="12.5" fill="#1f2937" font-family="Consolas, monospace">v = x + φ(x − x_k)</text>
+  <text x="311" y="184" text-anchor="middle" font-size="12" fill="#4b5563">change one dimension,</text>
+  <text x="311" y="200" text-anchor="middle" font-size="12" fill="#4b5563">keep the better one</text>
+  <line x1="404" y1="153" x2="444" y2="153" stroke="#555" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- Onlooker -->
+  <rect x="448" y="96" width="196" height="114" rx="10" fill="#e6effb" stroke="#3B7DD8" stroke-width="2"/>
+  <text x="546" y="124" text-anchor="middle" font-size="15" font-weight="700" fill="#1f5bb3">2 · Onlooker bees</text>
+  <text x="546" y="146" text-anchor="middle" font-size="12" fill="#4b5563">pick sources with</text>
+  <text x="546" y="166" text-anchor="middle" font-size="11" fill="#1f2937" font-family="Consolas, monospace">p = 0.9·fit/max(fit)+0.1</text>
+  <text x="546" y="184" text-anchor="middle" font-size="12" fill="#4b5563">same move: good sources</text>
+  <text x="546" y="200" text-anchor="middle" font-size="12" fill="#4b5563">are exploited more</text>
+  <line x1="644" y1="153" x2="684" y2="153" stroke="#555" stroke-width="2" marker-end="url(#a)"/>
+  <text x="666" y="232" text-anchor="middle" font-size="11" fill="#2a9d4b">★ memorize best</text>
+  <path d="M666,224 L666,160" stroke="#2a9d4b" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- Scout -->
+  <rect x="688" y="96" width="168" height="114" rx="10" fill="#fbe8e8" stroke="#D64545" stroke-width="2"/>
+  <text x="772" y="124" text-anchor="middle" font-size="15" font-weight="700" fill="#b02a2a">3 · Scout bee</text>
+  <text x="772" y="146" text-anchor="middle" font-size="12" fill="#4b5563">if a source failed</text>
+  <text x="772" y="166" text-anchor="middle" font-size="12.5" fill="#1f2937" font-family="Consolas, monospace">trial ≥ limit</text>
+  <text x="772" y="184" text-anchor="middle" font-size="12" fill="#4b5563">abandon it, restart</text>
+  <text x="772" y="200" text-anchor="middle" font-size="12" fill="#4b5563">at a random spot</text>
+
+  <!-- loop back -->
+  <path d="M772,210 L772,262 L311,262 L311,214" fill="none" stroke="#555" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="452" y="250" width="176" height="24" rx="12" fill="#ffffff"/>
+  <text x="540" y="267" text-anchor="middle" font-size="12.5" fill="#374151">repeat until max_evals</text>
+
+  <!-- header -->
+  <text x="24" y="40" font-size="19" font-weight="700" fill="#111827">One cycle of the canonical ABC</text>
+  <text x="24" y="64" font-size="13" fill="#4b5563">Exploitation (employed, onlooker) and exploration (scout) in a single loop — Karaboğa (2005)</text>
+  <text x="24" y="306" font-size="11.5" fill="#6b7280">fit = 1/(1+f) for f ≥ 0, else 1+|f|  ·  φ ~ U(−1, 1)  ·  x_k: random other source  ·  default limit = SN × D</text>
+</svg>
