@@ -9,7 +9,7 @@
 ![scikit-learn](https://img.shields.io/badge/sklearn-compatible-orange)
 ![Dependencies](https://img.shields.io/badge/deps-numpy%20%7C%20scikit--learn-lightgrey)
 
-**abcopt** is a faithful implementation of the **Artificial Bee Colony** algorithm proposed by **Derviş Karaboğa (2005)** at Erciyes University. It is useful for two things:
+**abcopt** implements the **Artificial Bee Colony** algorithm proposed by **Derviş Karaboğa (2005)** at Erciyes University, step for step as in the [reference implementation](https://github.com/artificialbeecolony/Python_ABC) published by the ABC research group. It is useful for two things:
 
 1. **Black-box optimization:** minimize any objective function within box constraints, with no gradients required.
 2. **Hyperparameter tuning:** a drop-in alternative to `GridSearchCV` / `RandomizedSearchCV` for any scikit-learn compatible estimator (scikit-learn, LightGBM, XGBoost, …).
@@ -18,14 +18,14 @@
 
 ## ✨ Features
 
-- **Canonical algorithm:** employed, onlooker (roulette-wheel selection) and scout bee phases, following the original paper; one dimension is perturbed per move.
+- **Canonical algorithm, verified:** employed, onlooker and scout bee phases exactly as in the Erciyes University reference code. A test runs both implementations on the same random-number stream and checks that they evaluate identical points and return identical results.
 - **scikit-learn API:** `ABCSearchCV` exposes `fit`, `predict`, `score`, `best_params_`, `best_score_` and `best_estimator_`.
 - **Mixed search spaces:** `float` (optionally log-scaled), `int` and `categorical` hyperparameters.
 - **Reproducible:** pass `random_state` and every run is identical.
 - **Evaluation budget:** you set `max_evals`, so the run cost is predictable.
 - **Robust:** failing candidates raise a warning instead of being hidden (or stop the search with `error_score="raise"`), and invalid inputs fail fast with clear messages.
 - **Convergence history:** every run returns its best-so-far curve for plotting and comparison.
-- **Tested:** 30 unit tests run on every push via GitHub Actions.
+- **Tested:** 48 tests, including the reference-equivalence test, run on every push via GitHub Actions.
 - **Lightweight:** depends only on `numpy` and `scikit-learn`.
 
 ---
@@ -135,9 +135,9 @@ CanonicalABCSolver(objective_func, n_params, lb, ub,
 | `objective_func` | Callable taking a 1-D `np.ndarray` and returning a scalar cost to **minimize** |
 | `n_params` | Number of dimensions |
 | `lb`, `ub` | Lower / upper bounds per dimension |
-| `pop_size` | Number of food sources (SN) |
+| `pop_size` | Number of food sources (SN) = number of employed bees = number of onlooker bees. The colony size (`NumberOfPopulation` in the reference code) is `2 × pop_size`. |
 | `max_evals` | Total objective-function evaluation budget |
-| `limit` | Trials without improvement before a source is abandoned (default: `pop_size × n_params`) |
+| `limit` | A source is abandoned once its failed-trial counter reaches `limit` (default: `pop_size × n_params`) |
 | `random_state` | Seed (or `np.random.Generator`) for reproducible runs |
 
 `NaN` objective values are treated as the worst possible cost.
@@ -176,8 +176,8 @@ ABC models the foraging behaviour of a honey bee colony. Each **food source** is
 | Phase | Role |
 |---|---|
 | **Employed bees** | Each one improves its own food source by perturbing one dimension towards or away from a random neighbour: `v_ij = x_ij + φ·(x_ij − x_kj)`, `φ ∈ [−1, 1]`. Greedy selection keeps the better solution. |
-| **Onlooker bees** | Pick sources with probability proportional to fitness (roulette wheel), so promising regions are exploited more. |
-| **Scout bees** | A source that has not improved for `limit` trials is abandoned and replaced by a random one, which keeps exploration alive. |
+| **Onlooker bees** | Visit the sources in turn and improve source *i* with probability `p_i = 0.9 · fit_i / max(fit) + 0.1`, until `pop_size` onlookers have been placed, so promising regions are exploited more. |
+| **Scout bee** | Once per cycle, the source with the most failed trials is replaced by a random one if its counter has reached `limit`, which keeps exploration alive. |
 
 Fitness is derived from cost as `1 / (1 + f)` for `f ≥ 0` and `1 + |f|` otherwise.
 
@@ -194,7 +194,7 @@ The library was used to tune a **federated learning** setup on **PathMNIST** (co
 | Standard FedAvg | 0.010 | 0.50 | 78.05% |
 | **ABC-tuned FedAvg** | **0.069** | **0.57** | **85.28%** (+7.2 pts) |
 
-For reference, centralized training with the default hyperparameters reached 80.29%.
+For reference, centralized training with the default hyperparameters reached 80.29%. *(This case study was run with abcopt 0.1, before the reference-alignment changes of 0.2.1.)*
 
 ![ABC vs. standard FedAvg](https://raw.githubusercontent.com/yusufkorkmazyigit/abc-optimizer-lib/main/examples/abc_fedavg_final_result.png)
 
@@ -204,16 +204,16 @@ For reference, centralized training with the default hyperparameters reached 80.
 
 ## 📊 Benchmark
 
-abcopt was compared with **Random Search** and **Optuna TPE** under identical evaluation budgets ([full notebook](https://github.com/yusufkorkmazyigit/abc-optimizer-lib/blob/main/examples/benchmark/benchmark.ipynb)).
+abcopt was compared with **Random Search** and **Optuna TPE** under identical evaluation budgets, using abcopt 0.2.1 ([full notebook](https://github.com/yusufkorkmazyigit/abc-optimizer-lib/blob/main/examples/benchmark/benchmark.ipynb)).
 
 **Black-box functions (D = 10, 10 seeds), best value found (lower is better):**
 
 | Function | ABC @ 1k | TPE @ 1k | ABC @ 10k | TPE @ 2k | Random @ 10k |
 |---|---|---|---|---|---|
-| Sphere | 1.07 | **0.27** | **5e-11** | 0.22 | 12.3 |
-| Rosenbrock | 374 | **88.5** | **0.99** | 114 | 1.1e4 |
-| Rastrigin | **26.3** | 59.7 | **0.10** | 47.3 | 71.2 |
-| Ackley | 12.6 | **5.58** | **0.0004** | 5.8 | 16.7 |
+| Sphere | 1.5 | **0.27** | **4e-11** | 0.22 | 12.3 |
+| Rosenbrock | 1.3e3 | **88.5** | **0.51** | 114 | 1.1e4 |
+| Rastrigin | **29.9** | 59.7 | **0.09** | 47.3 | 71.2 |
+| Ackley | 12.8 | **5.58** | **0.0003** | 5.8 | 16.7 |
 
 ![Long-budget convergence](https://raw.githubusercontent.com/yusufkorkmazyigit/abc-optimizer-lib/main/examples/benchmark/benchmark_functions_long.png)
 
@@ -221,7 +221,7 @@ abcopt was compared with **Random Search** and **Optuna TPE** under identical ev
 
 - With a **short budget**, TPE is usually ahead; ABC beats Random Search everywhere and wins on the highly multimodal Rastrigin.
 - With a **larger budget**, ABC converges to near the global optimum on all four functions while TPE stalls.
-- ABC's own overhead is tiny: about **0.04 s vs 28 s** for TPE over 2,000 evaluations.
+- ABC's own overhead is tiny: about **0.02 s vs 24 s** for TPE over 2,000 evaluations.
 - For **hyperparameter tuning with only 50 candidates**, the three methods are within noise on test accuracy, and TPE finds the best CV score. For very small budgets of expensive evaluations, TPE is the better choice.
 
 ---

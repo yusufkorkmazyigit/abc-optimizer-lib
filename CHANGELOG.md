@@ -1,8 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.2.1
+
+### Changed
+- `CanonicalABCSolver` now follows the Erciyes University reference implementation (https://github.com/artificialbeecolony/Python_ABC) step for step:
+  - onlooker selection probability `p_i = 0.9 * fit_i / max(fit) + 0.1` (previously `fit_i / sum(fit)`);
+  - a food source is abandoned when its trial counter **reaches** `limit` (previously when it exceeded it);
+  - random numbers are drawn in the same order as the reference code.
+- If every food source has infinite cost, all sources are selected by onlookers instead of dividing by zero.
 
 ### Added
+- `tests/test_reference_equivalence.py`: runs abcopt and a line-by-line port of the reference code on the same random stream and checks for identical trajectories (18 scenarios).
 - Benchmark notebook comparing ABC with Random Search and Optuna TPE (`examples/benchmark/`).
 
 ## 0.2.0
