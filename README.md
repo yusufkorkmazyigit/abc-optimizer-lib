@@ -96,6 +96,27 @@ evals, best = zip(*search.history_)                  # best CV score after each 
 plt.plot(evals, best); plt.xlabel("candidates evaluated"); plt.ylabel("best CV score")
 ```
 
+### Monitor and stop early
+
+A callback is called after every ABC cycle with the current state; returning `True` stops the run. `EarlyStopping` stops once the best result has not improved for `patience` cycles.
+
+```python
+from abcopt import ABCSearchCV, EarlyStopping
+
+def log(state):
+    print(f"cycle {state.cycle}: {state.n_evals}/{state.max_evals} evals, best {state.best_score:.4f}")
+
+search = ABCSearchCV(HistGradientBoostingClassifier(random_state=0), param_space,
+                     cv=5, max_evals=500, random_state=0,
+                     callbacks=[log, EarlyStopping(patience=5)])
+search.fit(X, y)
+search.stopped_early_, search.n_evals_   # (True, 300): no improvement in cycles 3-7
+```
+
+One cycle uses about `2 × pop_size` evaluations, so `patience=5` with the default `pop_size=20` waits roughly 200 evaluations. A longer patience trades time for a chance of a late improvement.
+
+Without a stop request, callbacks do not change the search: they never draw random numbers, so the trajectory is the same as without them.
+
 ## How ABC works
 
 ABC models the foraging behaviour of a honey bee colony. Each **food source** is a candidate solution and its **nectar amount** is the solution's fitness. Three kinds of bees share the work:
@@ -138,7 +159,8 @@ abcopt was compared with Random Search and Optuna TPE under identical evaluation
 
 ```python
 CanonicalABCSolver(objective_func, n_params, lb, ub,
-                   pop_size=20, max_evals=1000, limit=None, random_state=None)
+                   pop_size=20, max_evals=1000, limit=None, random_state=None,
+                   callbacks=None)
 ```
 
 | Parameter | Description |
@@ -150,15 +172,22 @@ CanonicalABCSolver(objective_func, n_params, lb, ub,
 | `max_evals` | Budget of objective evaluations |
 | `limit` | A source is abandoned once its failed-trial counter reaches `limit`. Default: `pop_size × n_params`. |
 | `random_state` | Seed or `np.random.Generator` |
+| `callbacks` | Callable or list of callables, called after every cycle with a `CycleState`; returning `True` stops the run |
 
-`solve()` returns `(best_params, best_cost, history)`, where `history` lists `(evaluations_used, best_cost_so_far)` after initialization and after every cycle.
+`solve()` returns `(best_params, best_cost, history)`, where `history` lists `(evaluations_used, best_cost_so_far)` after initialization and after every cycle. After `solve()`, `n_cycles` holds the number of completed cycles and `stopped_early` tells whether a callback ended the run before the budget was used.
+
+### Callbacks
+
+`CycleState` fields: `cycle` (starting at 1), `n_evals`, `max_evals`, `best_cost`, `best_params` (a copy of the array for `CanonicalABCSolver`, the decoded dict for `ABCSearchCV`) and `best_score` (`ABCSearchCV` only, equal to `-best_cost`).
+
+`EarlyStopping(patience=10, min_delta=0.0)` stops when the best cost has not decreased by more than `min_delta` for `patience` cycles. It works for both classes and can be reused across runs.
 
 ### `ABCSearchCV`
 
 ```python
 ABCSearchCV(estimator, param_space, cv=3, scoring="accuracy", pop_size=20, max_evals=200,
             limit=None, random_state=None, n_jobs=None, error_score=np.nan,
-            refit=True, cache=True, verbose=False)
+            refit=True, cache=True, callbacks=None, verbose=False)
 ```
 
 **Search space** (`param_space`), one entry per hyperparameter:
@@ -178,6 +207,7 @@ ABCSearchCV(estimator, param_space, cv=3, scoring="accuracy", pop_size=20, max_e
 | `pop_size`, `max_evals`, `limit`, `random_state` | Passed to `CanonicalABCSolver`. `max_evals` counts every candidate ABC proposes. |
 | `error_score` | Score for candidates that fail to fit (a `RuntimeWarning` is issued); `"raise"` stops the search. |
 | `cache` | Reuse the score of a configuration ABC has already evaluated instead of cross-validating it again. Saves time; the search is unchanged. |
+| `callbacks` | As in `CanonicalABCSolver`, with the state given as decoded params and `best_score`. After a stop, the best configuration so far is refit as usual. |
 
 **`fit(X, y=None, groups=None, **fit_params)`**: `groups` is passed to group-aware splitters and `fit_params` (for example `sample_weight`) to the estimator.
 
@@ -191,6 +221,7 @@ ABCSearchCV(estimator, param_space, cv=3, scoring="accuracy", pop_size=20, max_e
 | `results_` | Every candidate in proposal order with `params`, `score` and `cached` |
 | `history_` | `(evaluations_used, best_score_so_far)` after each cycle |
 | `n_evals_`, `n_unique_evals_`, `n_splits_` | Candidates evaluated, distinct configurations (cross-validation runs), CV folds |
+| `n_cycles_`, `stopped_early_` | Completed ABC cycles; whether a callback stopped the search before `max_evals` |
 
 **Methods:** `predict`, `predict_proba`, `predict_log_proba`, `decision_function`, `transform`, `score` and `classes_`, whenever the underlying estimator supports them.
 

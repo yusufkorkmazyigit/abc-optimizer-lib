@@ -1,5 +1,7 @@
 import numpy as np
 
+from .callbacks import CycleState
+
 
 class CanonicalABCSolver:
     """
@@ -21,7 +23,8 @@ class CanonicalABCSolver:
     6. Scout bee: the source with the most failed trials is replaced by a random
        solution when its trial counter reaches ``limit``.
 
-    The loop stops when ``max_evals`` objective evaluations have been used.
+    The loop stops when ``max_evals`` objective evaluations have been used, or
+    earlier when a callback asks it to.
     Random numbers are drawn in the same order as in the reference code, so for an
     identical stream of U(0, 1) numbers both produce identical trajectories
     (see ``tests/test_reference_equivalence.py``).
@@ -46,6 +49,12 @@ class CanonicalABCSolver:
         Defaults to ``pop_size * n_params`` (Karaboğa & Baştürk, 2008).
     random_state : int, np.random.Generator or None, default=None
         Seed or generator for reproducible runs.
+    callbacks : callable, list of callables or None, default=None
+        Called after every cycle with a :class:`~abcopt.CycleState`. If any
+        callback returns ``True`` the run stops after that cycle (all callbacks
+        of that cycle are still called). See :class:`~abcopt.EarlyStopping`.
+        Callbacks never consume random numbers, so without a stop request the
+        trajectory is identical to a run without callbacks.
 
     Attributes
     ----------
@@ -55,10 +64,14 @@ class CanonicalABCSolver:
         Objective value of ``best_params``.
     history : list of (int, float)
         ``(evaluations_used, best_cost_so_far)`` after initialization and after each cycle.
+    n_cycles : int
+        Number of completed cycles.
+    stopped_early : bool
+        ``True`` if a callback stopped the run before ``max_evals`` was used.
     """
 
     def __init__(self, objective_func, n_params, lb, ub, pop_size=20,
-                 max_evals=1000, limit=None, random_state=None):
+                 max_evals=1000, limit=None, random_state=None, callbacks=None):
         self.objective_func = objective_func
         self.D = int(n_params)
         self.lb = np.asarray(lb, dtype=float).ravel()
@@ -67,12 +80,30 @@ class CanonicalABCSolver:
         self.total_evaluation = int(max_evals)
         self.limit = limit if limit is not None else self.SN * self.D
         self.random_state = random_state
+        self.callbacks = self._as_callback_list(callbacks)
 
         self._validate()
 
         self.best_params = None
         self.best_cost = float("inf")
         self.history = []
+        self.n_cycles = 0
+        self.stopped_early = False
+
+    @staticmethod
+    def _as_callback_list(callbacks):
+        if callbacks is None:
+            return []
+        if callable(callbacks):
+            return [callbacks]
+        try:
+            callbacks = list(callbacks)
+        except TypeError:
+            raise TypeError("callbacks must be a callable or a list of callables.") from None
+        for cb in callbacks:
+            if not callable(cb):
+                raise TypeError(f"Every callback must be callable, got {cb!r}.")
+        return callbacks
 
     def _validate(self):
         if not callable(self.objective_func):
@@ -184,6 +215,23 @@ class CanonicalABCSolver:
         if self.trial[worst] >= self.limit and not self._stop():
             self._init_source(worst)
 
+    def _run_callbacks(self):
+        """Call every callback; return True if any of them asks to stop."""
+        if not self.callbacks:
+            return False
+        state = CycleState(
+            cycle=self.n_cycles,
+            n_evals=self._evals,
+            max_evals=self.total_evaluation,
+            best_cost=self.best_cost,
+            best_params=np.copy(self.best_params),
+        )
+        stop = False
+        for cb in self.callbacks:
+            if cb(state):
+                stop = True
+        return stop
+
     # ------------------------------------------------------------------ #
     def solve(self):
         """
@@ -205,6 +253,8 @@ class CanonicalABCSolver:
         self.best_params = None
         self.best_cost = float("inf")
         self.history = []
+        self.n_cycles = 0
+        self.stopped_early = False
 
         self.foods = np.zeros((self.SN, self.D))
         self.costs = np.full(self.SN, np.inf)
@@ -225,5 +275,9 @@ class CanonicalABCSolver:
             self._memorize_best()
             self._scout_bee()
             self.history.append((self._evals, self.best_cost))
+            self.n_cycles += 1
+            if self._run_callbacks():
+                self.stopped_early = not self._stop()
+                break
 
         return self.best_params, self.best_cost, self.history

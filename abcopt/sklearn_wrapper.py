@@ -10,6 +10,7 @@ from sklearn.metrics import check_scoring
 from sklearn.model_selection import check_cv, cross_validate
 from sklearn.utils.metaestimators import available_if
 
+from .callbacks import CycleState
 from .core import CanonicalABCSolver
 
 _VALID_TYPES = ("float", "int", "categorical")
@@ -73,6 +74,12 @@ class ABCSearchCV(MetaEstimatorMixin, BaseEstimator):
         score is reused instead of running cross-validation again. The candidate
         still counts towards ``max_evals``, so the search itself is unchanged; only
         time is saved.
+    callbacks : callable, list of callables or None, default=None
+        Called after every ABC cycle with a :class:`~abcopt.CycleState` whose
+        ``best_params`` is the decoded hyperparameter dict and ``best_score``
+        the best mean CV score so far. Returning ``True`` stops the search;
+        the best configuration found so far is then refit as usual. Use
+        :class:`~abcopt.EarlyStopping` to stop when the score stops improving.
     verbose : bool, default=False
 
     Attributes
@@ -96,11 +103,16 @@ class ABCSearchCV(MetaEstimatorMixin, BaseEstimator):
     history_ : list of (int, float)
         ``(evaluations_used, best_score_so_far)`` after each ABC cycle.
     n_evals_ : int
-        Number of candidates evaluated by the algorithm (``== max_evals``).
+        Number of candidates evaluated by the algorithm (``max_evals``, or
+        fewer if a callback stopped the search).
     n_unique_evals_ : int
         Number of distinct configurations evaluated (with ``cache=True``, the
         number of cross-validation runs actually performed).
     n_splits_ : int
+    n_cycles_ : int
+        Number of completed ABC cycles.
+    stopped_early_ : bool
+        ``True`` if a callback stopped the search before ``max_evals``.
     refit_time_ : float
         Seconds spent refitting the best estimator.
     classes_ : ndarray
@@ -109,7 +121,8 @@ class ABCSearchCV(MetaEstimatorMixin, BaseEstimator):
 
     def __init__(self, estimator, param_space, cv=3, scoring="accuracy",
                  pop_size=20, max_evals=200, limit=None, random_state=None,
-                 n_jobs=None, error_score=np.nan, refit=True, cache=True, verbose=False):
+                 n_jobs=None, error_score=np.nan, refit=True, cache=True, callbacks=None,
+                 verbose=False):
         self.estimator = estimator
         self.param_space = param_space
         self.cv = cv
@@ -122,6 +135,7 @@ class ABCSearchCV(MetaEstimatorMixin, BaseEstimator):
         self.error_score = error_score
         self.refit = refit
         self.cache = cache
+        self.callbacks = callbacks
         self.verbose = verbose
 
     # ------------------------------------------------------------------ #
@@ -248,10 +262,26 @@ class ABCSearchCV(MetaEstimatorMixin, BaseEstimator):
             # ABC minimizes; NaN scores become +inf cost inside the solver.
             return -score
 
+        user_callbacks = CanonicalABCSolver._as_callback_list(self.callbacks)
+
+        def search_callback(state):
+            # Present the solver state in search terms: decoded params and a score.
+            search_state = CycleState(
+                cycle=state.cycle, n_evals=state.n_evals, max_evals=state.max_evals,
+                best_cost=state.best_cost, best_params=self._decode(state.best_params),
+                best_score=-state.best_cost,
+            )
+            stop = False
+            for cb in user_callbacks:
+                if cb(search_state):
+                    stop = True
+            return stop
+
         solver = CanonicalABCSolver(
             objective, len(self._keys), lb, ub,
             pop_size=self.pop_size, max_evals=self.max_evals,
             limit=self.limit, random_state=self.random_state,
+            callbacks=[search_callback] if user_callbacks else None,
         )
         best_vec, best_cost, history = solver.solve()
 
@@ -266,6 +296,8 @@ class ABCSearchCV(MetaEstimatorMixin, BaseEstimator):
         self.history_ = [(n, -c) for n, c in history]
         self.n_evals_ = len(self.results_)
         self.n_unique_evals_ = len(order)
+        self.n_cycles_ = solver.n_cycles
+        self.stopped_early_ = solver.stopped_early
         self.cv_results_ = self._format_cv_results([unique[k] for k in order])
         self.best_index_ = order.index(self._cache_key(self.best_params_))
 
