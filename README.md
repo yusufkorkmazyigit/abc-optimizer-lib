@@ -279,7 +279,7 @@ pip install -e ".[test]"
 pytest
 ```
 
-The test suite includes the reference-equivalence test (`tests/test_reference_equivalence.py`) and runs on Python 3.9, 3.11 and 3.12 for every push. Release notes are in [CHANGELOG.md](https://github.com/yusufkorkmazyigit/abc-optimizer-lib/blob/main/CHANGELOG.md). Issues and pull requests are welcome.
+The test suite includes the reference-equivalence test (`tests/test_reference_equivalence.py`) and runs on Python 3.9 to 3.13 for every push. Release notes are in [CHANGELOG.md](https://github.com/yusufkorkmazyigit/abc-optimizer-lib/blob/main/CHANGELOG.md). Issues and pull requests are welcome.
 
 ## Citation
 
