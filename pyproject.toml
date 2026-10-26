@@ -36,4 +36,5 @@ Issues = "https://github.com/yusufkorkmazyigit/abc-optimizer-lib/issues"
 packages = ["abcopt"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "abcopt"]
+addopts = "--doctest-modules"

@@ -6,6 +6,14 @@
 - `callbacks` argument on `CanonicalABCSolver` and `ABCSearchCV` (#1). Each callback is called after every ABC cycle with a `CycleState` (cycle, evaluations used, budget, best cost, best params and, for `ABCSearchCV`, best score and decoded params). Returning `True` stops the run after that cycle; the best configuration so far is refit as usual.
 - `EarlyStopping(patience, min_delta)`: stops when the best cost has not improved for `patience` cycles.
 - `CanonicalABCSolver.n_cycles` / `stopped_early` and `ABCSearchCV.n_cycles_` / `stopped_early_`.
+- Ask/tell interface on `CanonicalABCSolver` (#2): `ask()` returns the next candidate, `tell(x, cost)` reports its cost, `done` tells when the run is over, `reset()` starts a new run. For the same seed it visits exactly the same points as `solve()`. A pending candidate is returned again by `ask()`, so a failed evaluation can be retried.
+- `CanonicalABCSolver.n_evals`: evaluations used in the current or last run.
+- Docstring examples are run as tests (`--doctest-modules`).
+
+### Changed
+- `objective_func` may be `None` when the solver is driven only through `ask()` / `tell()`.
+- `solve()` is implemented on top of the same loop as `ask()` / `tell()`. Results are unchanged (the reference-equivalence tests pass as before) and the overhead is about 2%.
+- A non-numeric objective value now raises `TypeError` with a clear message.
 
 Callbacks never draw random numbers, so a run without a stop request is identical to one without callbacks; the reference-equivalence tests are unchanged.
 

@@ -29,11 +29,20 @@ class CanonicalABCSolver:
     identical stream of U(0, 1) numbers both produce identical trajectories
     (see ``tests/test_reference_equivalence.py``).
 
+    The solver can be driven in two ways:
+
+    - ``solve()`` calls ``objective_func`` itself and returns the result.
+    - ``ask()`` / ``tell()`` hand each candidate to the caller, who evaluates it
+      anywhere (another process, a cluster job, a lab experiment) and reports
+      the cost back. ABC is sequential, so one candidate is pending at a time.
+      For the same seed both ways visit exactly the same points.
+
     Parameters
     ----------
-    objective_func : callable
+    objective_func : callable or None
         Function taking a 1-D ``np.ndarray`` of length ``n_params`` and
-        returning a scalar cost to **minimize**.
+        returning a scalar cost to **minimize**. May be ``None`` when the
+        solver is only driven through ``ask()`` / ``tell()``.
     n_params : int
         Number of dimensions (decision variables).
     lb, ub : array-like of shape (n_params,)
@@ -68,6 +77,22 @@ class CanonicalABCSolver:
         Number of completed cycles.
     stopped_early : bool
         ``True`` if a callback stopped the run before ``max_evals`` was used.
+    n_evals : int
+        Objective evaluations used in the current or last run.
+    done : bool
+        ``True`` once the current run has finished (budget used or stopped by a
+        callback). ``False`` before the first ``ask()`` and while a run is going on.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> solver = CanonicalABCSolver(None, n_params=2, lb=[-5, -5], ub=[5, 5],
+    ...                             max_evals=500, random_state=0)
+    >>> while not solver.done:
+    ...     x = solver.ask()
+    ...     solver.tell(x, float(np.sum(x ** 2)))
+    >>> solver.best_cost < 1e-3
+    True
     """
 
     def __init__(self, objective_func, n_params, lb, ub, pop_size=20,
@@ -89,6 +114,10 @@ class CanonicalABCSolver:
         self.history = []
         self.n_cycles = 0
         self.stopped_early = False
+        self._evals = 0
+        self._gen = None       # the running ABC loop (a generator), None when idle
+        self._pending = None   # candidate handed out by ask() and awaiting tell()
+        self._done = False
 
     @staticmethod
     def _as_callback_list(callbacks):
@@ -106,8 +135,8 @@ class CanonicalABCSolver:
         return callbacks
 
     def _validate(self):
-        if not callable(self.objective_func):
-            raise TypeError("objective_func must be callable.")
+        if self.objective_func is not None and not callable(self.objective_func):
+            raise TypeError("objective_func must be callable or None.")
         if self.D < 1:
             raise ValueError("n_params must be at least 1.")
         if self.lb.shape != (self.D,) or self.ub.shape != (self.D,):
@@ -143,9 +172,8 @@ class CanonicalABCSolver:
         return self._evals >= self.total_evaluation
 
     def _evaluate(self, x):
-        cost = float(self.objective_func(np.copy(x)))
-        if np.isnan(cost):
-            cost = float("inf")
+        """Hand ``x`` out for evaluation and receive its cost (the only yield point)."""
+        cost = yield np.copy(x)
         self._evals += 1
         return cost
 
@@ -153,7 +181,7 @@ class CanonicalABCSolver:
         """Place food source i at a uniformly random position (initialization and scouts)."""
         for j in range(self.D):
             self.foods[i, j] = self._u() * (self.ub[j] - self.lb[j]) + self.lb[j]
-        self.costs[i] = self._evaluate(self.foods[i])
+        self.costs[i] = yield from self._evaluate(self.foods[i])
         self.fitness[i] = self._calculate_fitness(self.costs[i])
         self.trial[i] = 0
 
@@ -168,7 +196,7 @@ class CanonicalABCSolver:
         new_sol[j] = self.foods[i, j] + (self.foods[i, j] - self.foods[k, j]) * phi
         new_sol[j] = min(max(new_sol[j], self.lb[j]), self.ub[j])
 
-        new_cost = self._evaluate(new_sol)
+        new_cost = yield from self._evaluate(new_sol)
         new_fit = self._calculate_fitness(new_cost)
         if new_fit > self.fitness[i]:
             self.foods[i] = new_sol
@@ -190,7 +218,7 @@ class CanonicalABCSolver:
     def _employed_bees(self):
         i = 0
         while i < self.SN and not self._stop():
-            self._try_improve(i)
+            yield from self._try_improve(i)
             i += 1
 
     def _calculate_probabilities(self):
@@ -207,13 +235,13 @@ class CanonicalABCSolver:
         while t < self.SN and not self._stop():
             if self._u() < self.prob[i]:
                 t += 1
-                self._try_improve(i)
+                yield from self._try_improve(i)
             i = (i + 1) % self.SN
 
     def _scout_bee(self):
         worst = int(np.argmax(self.trial))
         if self.trial[worst] >= self.limit and not self._stop():
-            self._init_source(worst)
+            yield from self._init_source(worst)
 
     def _run_callbacks(self):
         """Call every callback; return True if any of them asks to stop."""
@@ -233,16 +261,10 @@ class CanonicalABCSolver:
         return stop
 
     # ------------------------------------------------------------------ #
-    def solve(self):
-        """
-        Run the optimization.
-
-        Returns
-        -------
-        best_params : np.ndarray
-        best_cost : float
-        history : list of (int, float)
-        """
+    # The ABC loop. It yields every candidate and receives its cost, so the
+    # same code serves solve() and ask()/tell().
+    # ------------------------------------------------------------------ #
+    def _reset_state(self):
         if getattr(self, "_rng_override", None) is not None:  # testing hook
             self._rng = self._rng_override
         elif isinstance(self.random_state, np.random.Generator):
@@ -262,22 +284,141 @@ class CanonicalABCSolver:
         self.trial = np.zeros(self.SN, dtype=int)
         self.prob = np.zeros(self.SN)
 
+    def _loop(self):
         for i in range(self.SN):
-            self._init_source(i)
+            yield from self._init_source(i)
         self.best_cost, self.best_params = float(self.costs[0]), np.copy(self.foods[0])
         self._memorize_best()
         self.history.append((self._evals, self.best_cost))
 
         while not self._stop():
-            self._employed_bees()
+            yield from self._employed_bees()
             self._calculate_probabilities()
-            self._onlooker_bees()
+            yield from self._onlooker_bees()
             self._memorize_best()
-            self._scout_bee()
+            yield from self._scout_bee()
             self.history.append((self._evals, self.best_cost))
             self.n_cycles += 1
             if self._run_callbacks():
                 self.stopped_early = not self._stop()
                 break
 
+    def _advance(self, cost=None):
+        """Run the loop up to the next candidate; mark the run done when it ends."""
+        try:
+            self._pending = self._gen.send(cost)
+        except StopIteration:
+            self._pending = None
+            self._gen = None
+            self._done = True
+
+    @staticmethod
+    def _as_cost(cost):
+        try:
+            cost = float(cost)
+        except (TypeError, ValueError):
+            raise TypeError(f"cost must be a real scalar, got {cost!r}.") from None
+        return float("inf") if np.isnan(cost) else cost
+
+    # ------------------------------------------------------------------ #
+    # Public API
+    # ------------------------------------------------------------------ #
+    @property
+    def done(self):
+        return self._done
+
+    @property
+    def n_evals(self):
+        return self._evals
+
+    def reset(self):
+        """Discard any run in progress. The next ``ask()`` starts a new run."""
+        if self._gen is not None:
+            self._gen.close()
+        self._gen = None
+        self._pending = None
+        self._done = False
+
+    def ask(self):
+        """
+        Return the next candidate to evaluate.
+
+        The first call starts a run. Until its cost is reported with ``tell()``
+        the same candidate is returned again, so an interrupted evaluation can
+        simply be retried.
+
+        Returns
+        -------
+        x : np.ndarray of shape (n_params,)
+            A copy; modifying it does not affect the solver.
+
+        Raises
+        ------
+        RuntimeError
+            If the run has finished (``done`` is ``True``). Call ``reset()``
+            to start a new one.
+        """
+        if self._done:
+            raise RuntimeError(
+                "The run has finished (budget used or stopped by a callback). "
+                "Read best_params / best_cost, or call reset() to start a new run."
+            )
+        if self._gen is None:
+            self._reset_state()
+            self._gen = self._loop()
+            self._advance()
+        return np.copy(self._pending)
+
+    def tell(self, x, cost):
+        """
+        Report the cost of the candidate returned by the last ``ask()``.
+
+        Parameters
+        ----------
+        x : array-like of shape (n_params,)
+            The candidate, exactly as returned by ``ask()``.
+        cost : float
+            Its objective value (to be minimized). ``NaN`` is treated as the
+            worst possible cost.
+
+        Raises
+        ------
+        RuntimeError
+            If no candidate is pending.
+        ValueError
+            If ``x`` is not the pending candidate.
+        """
+        if self._pending is None:
+            raise RuntimeError("No candidate is pending; call ask() first.")
+        x = np.asarray(x, dtype=float)
+        if x.shape != self._pending.shape or not np.array_equal(x, self._pending):
+            raise ValueError(
+                "x is not the pending candidate. ABC is sequential: tell() must "
+                "report the point returned by the last ask()."
+            )
+        self._advance(self._as_cost(cost))
+
+    def solve(self):
+        """
+        Run the optimization, calling ``objective_func`` for every candidate.
+
+        Starts a new run; a run in progress through ``ask()`` / ``tell()`` is
+        discarded.
+
+        Returns
+        -------
+        best_params : np.ndarray
+        best_cost : float
+        history : list of (int, float)
+        """
+        if self.objective_func is None:
+            raise TypeError(
+                "solve() needs an objective_func; without one, drive the solver "
+                "with ask() and tell()."
+            )
+        self.reset()
+        self.ask()  # starts the run
+        while not self._done:
+            # _pending is a private copy, so the objective may modify it freely
+            self._advance(self._as_cost(self.objective_func(self._pending)))
         return self.best_params, self.best_cost, self.history
