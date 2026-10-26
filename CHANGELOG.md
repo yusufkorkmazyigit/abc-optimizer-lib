@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
 
 ### Added
 - `callbacks` argument on `CanonicalABCSolver` and `ABCSearchCV` (#1). Each callback is called after every ABC cycle with a `CycleState` (cycle, evaluations used, budget, best cost, best params and, for `ABCSearchCV`, best score and decoded params). Returning `True` stops the run after that cycle; the best configuration so far is refit as usual.

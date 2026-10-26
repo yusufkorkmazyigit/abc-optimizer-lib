@@ -6,8 +6,8 @@ authors:
   - family-names: "Korkmazyiğit"
     given-names: "Yusuf"
     affiliation: "Erciyes University"
-version: "0.2.2"
-date-released: "2026-10-13"
+version: "0.3.0"
+date-released: "2026-10-26"
 license: MIT
 repository-code: "https://github.com/yusufkorkmazyigit/abc-optimizer-lib"
 url: "https://pypi.org/project/abcopt/"

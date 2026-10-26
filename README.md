@@ -298,7 +298,7 @@ If abcopt helps your work, please cite the original algorithm and this software:
   author  = {Korkmazyiğit, Yusuf},
   title   = {abcopt: Canonical Artificial Bee Colony optimization for Python},
   url     = {https://github.com/yusufkorkmazyigit/abc-optimizer-lib},
-  version = {0.2.2},
+  version = {0.3.0},
   year    = {2026}
 }
 ```
